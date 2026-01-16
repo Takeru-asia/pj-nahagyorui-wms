@@ -13,6 +13,16 @@
 - **Google Drive**: https://drive.google.com/drive/folders/1ltuccdnWFpH4Ag0PCIFbBNidsnfoZQor
 - **会社情報**: https://www.nahagyorui.com/pages/company
 
+## 📊 プロジェクト図解
+
+プロジェクトの全体像や業務フロー、システム構成を視覚的に理解できる図解を用意しています。
+
+- **[図解集トップ](./diagrams/README.md)** - 全図解の案内
+- **[全体業務フロー図](./diagrams/overall-flow.md)** - 受注から出荷までの業務全体像
+- **[現状の問題点マップ](./diagrams/current-problems.md)** - 課題の体系的整理と優先順位
+- **[システムアーキテクチャ図](./diagrams/system-architecture.md)** - システム構成と機能設計
+- **[在庫フロー図](./diagrams/inventory-flow.md)** - 在庫の動きと管理方法
+
 ---
 
 ## 1. Background / Context
