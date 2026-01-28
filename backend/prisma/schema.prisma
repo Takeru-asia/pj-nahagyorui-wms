@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 商品マスタ
+model Product {
+  id          String   @id @default(cuid())
+  code        String   @unique // 商品コード
+  name        String   // 商品名
+  specification String? // 規格（サイズ等）
+  unit        String   // 単位（kg, 箱, 匹など）
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lots              Lot[]
+  receivingDetails  ReceivingDetail[]
+  inventories       Inventory[]
+  transactions      InventoryTransaction[]
+
+  @@map("products")
+}
+
+// ロット
+model Lot {
+  id            String   @id @default(cuid())
+  lotNumber     String   @unique // ロット番号（YYYYMMDD-商品コード-連番）
+  productId     String
+  receivingDate DateTime // 入庫日
+  unitPrice     Decimal  @db.Decimal(10, 2) // 仕入単価
+  createdAt     DateTime @default(now())
+
+  product       Product    @relation(fields: [productId], references: [id])
+  inventories   Inventory[]
+  transactions  InventoryTransaction[]
+
+  @@map("lots")
+}
+
+// 在庫（商品×ロット単位）
+model Inventory {
+  id        String   @id @default(cuid())
+  productId String
+  lotId     String
+  quantity  Decimal  @db.Decimal(10, 2) // 在庫数量
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id])
+  lot     Lot     @relation(fields: [lotId], references: [id])
+
+  @@unique([productId, lotId])
+  @@map("inventories")
+}
+
+// 入庫ヘッダー
+model Receiving {
+  id              String   @id @default(cuid())
+  receivingNumber String   @unique // 入庫番号
+  receivingDate   DateTime // 入庫日
+  deliverySlipNo  String?  // 納品書No
+  note            String?  // 備考
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  details ReceivingDetail[]
+
+  @@map("receivings")
+}
+
+// 入庫明細
+model ReceivingDetail {
+  id          String   @id @default(cuid())
+  receivingId String
+  productId   String
+  quantity    Decimal  @db.Decimal(10, 2) // 数量
+  unitPrice   Decimal  @db.Decimal(10, 2) // 仕入単価
+  lotNumber   String   // 採番されたロット番号
+  createdAt   DateTime @default(now())
+
+  receiving Receiving @relation(fields: [receivingId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@map("receiving_details")
+}
+
+// 在庫移動履歴（監査用）
+model InventoryTransaction {
+  id              String   @id @default(cuid())
+  productId       String
+  lotId           String
+  transactionType String   // RECEIVING（入庫）, SHIPPING（出庫）, PROCESSING（加工）, ADJUSTMENT（調整）
+  quantity        Decimal  @db.Decimal(10, 2) // 変動数量（入庫:+, 出庫:-）
+  referenceType   String?  // 参照元種別（RECEIVING, SHIPPING等）
+  referenceId     String?  // 参照元ID
+  note            String?  // 備考
+  createdAt       DateTime @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  lot     Lot     @relation(fields: [lotId], references: [id])
+
+  @@map("inventory_transactions")
+}
