@@ -1,0 +1,88 @@
+// 那覇魚類WMS データベーススキーマ
+// Generated from Prisma schema
+
+Project nahagyorui_wms {
+  database_type: 'PostgreSQL'
+  Note: '那覇魚類株式会社 倉庫管理システム'
+}
+
+// 商品マスタ
+Table products {
+  id varchar [pk, note: 'cuid()']
+  code varchar [unique, not null, note: '商品コード']
+  name varchar [not null, note: '商品名']
+  specification varchar [note: '規格（サイズ等）']
+  unit varchar [not null, note: '単位（kg, 箱, 匹など）']
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [not null]
+
+  Note: '商品マスタ'
+}
+
+// ロット
+Table lots {
+  id varchar [pk, note: 'cuid()']
+  lot_number varchar [unique, not null, note: 'ロット番号（YYYYMMDD-商品コード-連番）']
+  product_id varchar [not null, ref: > products.id]
+  receiving_date timestamp [not null, note: '入庫日']
+  unit_price decimal(10,2) [not null, note: '仕入単価']
+  created_at timestamp [default: `now()`, not null]
+
+  Note: 'ロット'
+}
+
+// 在庫（商品×ロット単位）
+Table inventories {
+  id varchar [pk, note: 'cuid()']
+  product_id varchar [not null, ref: > products.id]
+  lot_id varchar [not null, ref: > lots.id]
+  quantity decimal(10,2) [not null, note: '在庫数量']
+  updated_at timestamp [not null]
+
+  indexes {
+    (product_id, lot_id) [unique]
+  }
+
+  Note: '在庫（商品×ロット単位）'
+}
+
+// 入庫ヘッダー
+Table receivings {
+  id varchar [pk, note: 'cuid()']
+  receiving_number varchar [unique, not null, note: '入庫番号']
+  receiving_date timestamp [not null, note: '入庫日']
+  delivery_slip_no varchar [note: '納品書No']
+  note varchar [note: '備考']
+  created_at timestamp [default: `now()`, not null]
+  updated_at timestamp [not null]
+
+  Note: '入庫ヘッダー'
+}
+
+// 入庫明細
+Table receiving_details {
+  id varchar [pk, note: 'cuid()']
+  receiving_id varchar [not null, ref: > receivings.id]
+  product_id varchar [not null, ref: > products.id]
+  quantity decimal(10,2) [not null, note: '数量']
+  unit_price decimal(10,2) [not null, note: '仕入単価']
+  lot_number varchar [not null, note: '採番されたロット番号']
+  created_at timestamp [default: `now()`, not null]
+
+  Note: '入庫明細'
+}
+
+// 在庫移動履歴（監査用）
+Table inventory_transactions {
+  id varchar [pk, note: 'cuid()']
+  product_id varchar [not null, ref: > products.id]
+  lot_id varchar [not null, ref: > lots.id]
+  transaction_type varchar [not null, note: 'RECEIVING（入庫）, SHIPPING（出庫）, PROCESSING（加工）, ADJUSTMENT（調整）']
+  quantity decimal(10,2) [not null, note: '変動数量（入庫:+, 出庫:-）']
+  reference_type varchar [note: '参照元種別（RECEIVING, SHIPPING等）']
+  reference_id varchar [note: '参照元ID']
+  note varchar [note: '備考']
+  created_at timestamp [default: `now()`, not null]
+
+  Note: '在庫移動履歴（監査用）'
+}
